@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="eviCore.Registration.AutoRegistration" Version="1.0.180410.1" />
+    <PackageReference Include="eviCore.Registration.AutoRegistration.Feature" Version="2.0.181008.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.1" />
+    <PackageReference Include="Microsoft.ML" Version="0.8.0-preview-27101-1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MarketData.TdAmeritrade\MarketData.TdAmeritrade.csproj" />
+    <ProjectReference Include="..\MarketData\MarketData.csproj" />
+  </ItemGroup>
+</Project>
