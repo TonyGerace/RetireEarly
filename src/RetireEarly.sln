@@ -11,6 +11,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarketData.TdAmeritrade", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarketData.TdAmeritrade.IntegrationTests", "MarketData.TdAmeritrade.IntegrationTests\MarketData.TdAmeritrade.IntegrationTests.csproj", "{C1D6293D-8536-4681-826E-AB5C18DFDC3D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RetireEarly.Registration", "RetireEarly.Registration\RetireEarly.Registration.csproj", "{F8EAB5A2-ADCF-48F0-AC24-1E9CDF6D4F8C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RetireEarly.Registration.Feature", "RetireEarly.Registration.Feature\RetireEarly.Registration.Feature.csproj", "{465E6685-55BF-4AFA-8528-B574684A0536}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{C1D6293D-8536-4681-826E-AB5C18DFDC3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1D6293D-8536-4681-826E-AB5C18DFDC3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1D6293D-8536-4681-826E-AB5C18DFDC3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8EAB5A2-ADCF-48F0-AC24-1E9CDF6D4F8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8EAB5A2-ADCF-48F0-AC24-1E9CDF6D4F8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8EAB5A2-ADCF-48F0-AC24-1E9CDF6D4F8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8EAB5A2-ADCF-48F0-AC24-1E9CDF6D4F8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{465E6685-55BF-4AFA-8528-B574684A0536}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{465E6685-55BF-4AFA-8528-B574684A0536}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{465E6685-55BF-4AFA-8528-B574684A0536}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{465E6685-55BF-4AFA-8528-B574684A0536}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

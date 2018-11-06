@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using eviCore.Registration.AutoRegistration;
 using MarketData;
 using MarketData.TdAmeritrade;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +19,7 @@ using Microsoft.ML.Trainers;
 using Microsoft.ML.Trainers.FastTree;
 using Microsoft.ML.Transforms;
 using Microsoft.ML.Transforms.Categorical;
+using RetireEarly.Registration.Feature;
 
 
 namespace RetireEarly
@@ -55,8 +55,7 @@ namespace RetireEarly
             // We can use CreateDataView or CreateStreamingDataView, depending on whether 'churnData' is an IList, 
             // or merely an IEnumerable.
             var trainData = mlContext.CreateDataView(stockTickData);
-
-
+            
             var staticData = trainData
                 .AssertStatic(mlContext, c => (
                     Close: c.R4.Scalar,
