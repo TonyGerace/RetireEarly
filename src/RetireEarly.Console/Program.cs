@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Threading.Tasks;
 using MarketData;
@@ -20,14 +21,111 @@ using Microsoft.ML.Trainers.FastTree;
 using Microsoft.ML.Transforms;
 using Microsoft.ML.Transforms.Categorical;
 using RetireEarly.Registration.Feature;
-
+using static RetireEarly.Program;
 
 namespace RetireEarly
 {
+    public class MovementTracker
+    {
+
+
+        public enum Direction
+        {
+            Up,
+            None,
+            Down
+        }
+
+
+        private decimal PercentChange = 0;
+        private decimal LastPrice = 0;
+        private decimal PriceAtLastDirectionChange = 0;
+        private decimal PercentChangeSinceLastDirectionChange = 0;
+        private Direction CurrentDirection = Direction.None;
+
+        public void RecordMovement(Quote quote)
+        {
+            RecordMovementForPrice(quote.Open);
+            Console.WriteLine($"Direction{CurrentDirection} {PercentChange.ToString("P2", System.Globalization.CultureInfo.InvariantCulture)}  Price: {LastPrice}");
+        }
+
+        private void RecordMovementForPrice(decimal price)
+        {
+            Direction newDirection;
+
+            
+            if(price < LastPrice)
+            {
+                newDirection = Direction.Down;
+                PercentChange = CalculatePriceDecrease(price, LastPrice);
+
+            } 
+            else if(price > LastPrice)
+            {
+                newDirection = Direction.Up;
+                PercentChange = CalculatePriceIncrease(price, LastPrice);
+            } 
+            else
+            {
+                newDirection = Direction.None;
+                PercentChange = 0;
+            }
+
+
+
+            //Check to see if the direction is new
+            if(newDirection != CurrentDirection)
+            {
+                PercentChangeSinceLastDirectionChange = PercentChange;
+                CurrentDirection = newDirection;
+                PriceAtLastDirectionChange = price;
+            }
+            else
+            {
+
+
+                switch (CurrentDirection)
+                {
+                    case Direction.Down:
+                        PercentChangeSinceLastDirectionChange = CalculatePriceDecrease(price, PriceAtLastDirectionChange);
+                        break;
+                    case Direction.Up:
+                        PercentChangeSinceLastDirectionChange = CalculatePriceIncrease(price, PriceAtLastDirectionChange);
+                        break;
+                    default:
+                        PercentChangeSinceLastDirectionChange = 0;
+                        break;
+                }
+            }
+
+            LastPrice = price;
+        }
+
+        private decimal CalculatePriceIncrease(decimal newNumber, decimal orginalNumber)
+        {
+            if (orginalNumber == 0)
+                orginalNumber = 1;
+
+            var increase = newNumber - orginalNumber;
+            var precentage = (increase / orginalNumber);
+            return precentage;
+        }
+
+        private decimal CalculatePriceDecrease(decimal newNumber, decimal orginalNumber)
+        {
+            var decrease = orginalNumber - newNumber;
+            var percentage = (decrease - orginalNumber);
+            return percentage;
+        }
+
+    }
+
+
     class Program
     {
         static void Main(string[] args)
         {
+            var movementTracker = new MovementTracker();
             var stockTicks =
                 CreateStockTicks()
                     .GetAwaiter()
@@ -37,82 +135,16 @@ namespace RetireEarly
             foreach (var tick in stockTicks)
             {
                 Console.WriteLine($"Open: {tick.Open} Close: {tick.Close}");
+                movementTracker.RecordMovement(tick);
             }
 
-            var today = stockTicks[stockTicks.Count - 1];
 
-            stockTicks.RemoveAt(stockTicks.Count - 1);
-
-            // Create a new context for ML.NET operations. It can be used for exception tracking and logging, 
-            // as a catalog of available operations and as the source of randomness.
-            var mlContext = new MLContext();
-
-            // Step one: read the data as an IDataView.
-            // Let's assume that 'GetChurnData()' fetches and returns the training data from somewhere.
-            IList<StockTick> stockTickData = stockTicks;
-
-            // Turn the data into the ML.NET data view.
-            // We can use CreateDataView or CreateStreamingDataView, depending on whether 'churnData' is an IList, 
-            // or merely an IEnumerable.
-            var trainData = mlContext.CreateDataView(stockTickData);
-            
-            var staticData = trainData
-                .AssertStatic(mlContext, c => (
-                    Close: c.R4.Scalar,
-                    Open: c.R4.Scalar,
-                    High: c.R4.Scalar,
-                    Low: c.R4.Scalar,
-                    Volume: c.R4.Scalar,
-                    Year: c.R4.Scalar,
-                    Month: c.R4.Scalar,
-                    Day: c.R4.Scalar));
-
-
-            var staticDataPipeline =
-                staticData
-                    .MakeNewEstimator()
-                    .Append(r => (
-                        Close: r.Close,
-                        Features: r.Open
-                            .ConcatWith(r.Low)
-                            .ConcatWith(r.High)
-                            .ConcatWith(r.Volume)
-                            .ConcatWith(r.Year)
-                            .ConcatWith(r.Month)
-                            .ConcatWith(r.Day)))
-                    .Append(r =>
-                        mlContext
-                            .Regression
-                            .Trainers
-                            .FastTree(r.Close, r.Features, null, stockTickData.Count, stockTickData.Count, 10, 0.2D, null, null));
-
-            var staticModel = staticDataPipeline.Fit(staticData).AsDynamic;
-
-            var predictionEngine = staticModel.MakePredictionFunction<StockTick, StockTickPredication>(mlContext);
-
-            var prediction = predictionEngine.Predict(new StockTick()
-            {
-                Open = today.Open,
-                High = today.High,
-                Low = today.Low,
-                Volume = today.Volume,
-                Day = today.Day,
-                Month = today.Month,
-                Year = today.Year
-
-            });
-
-            Console.WriteLine("==============");
-            Console.WriteLine($"Open: {today.Open}");
-
-            Console.WriteLine("Close Prediction  -  {0}", prediction.Score);
-            Console.WriteLine("Close Actual      -  {0}", today.Close);
 
             Console.ReadLine();
         }
 
 
-        private static async Task<IEnumerable<StockTick>> CreateStockTicks()
+        private static async Task<IEnumerable<Quote>> CreateStockTicks()
         {
             IServiceCollection serviceCollection = new ServiceCollection();
 
@@ -126,19 +158,21 @@ namespace RetireEarly
 
             var priceHistoryService = provider.GetService<IDailyHistoricalQuoteService>();
 
-            var quotes = await priceHistoryService.GetDailyQuotesAsync("VTI", 5);
+            var quotes = await priceHistoryService.GetDailyQuotesAsync("SPY", 5);
 
-            return quotes.Select(q => new StockTick()
-            {
-                Close = q.Close,
-                High = q.High,
-                Low = q.Low,
-                Open = q.Open,
-                Volume = (float)q.Volume,
-                Year = q.DateTime.Year,
-                Month = q.DateTime.Month,
-                Day = q.DateTime.Day
-            });
+
+            return quotes;
+            //return quotes.Select(q => new StockTick()
+            //{
+            //    Close = q.Close,
+            //    High = q.High,
+            //    Low = q.Low,
+            //    Open = q.Open,
+            //    Volume = (decimal)q.Volume,
+            //    Year = q.DateTime.Year,
+            //    Month = q.DateTime.Month,
+            //    Day = q.DateTime.Day
+            //});
         }
 
 
@@ -146,32 +180,32 @@ namespace RetireEarly
         {
             [Column("0")]
             [ColumnName("Open")]
-            public float Open { get; set; }
+            public decimal Open { get; set; }
 
             [Column("1")]
             [ColumnName("Close")]
-            public float Close { get; set; }
+            public decimal Close { get; set; }
 
             [Column("2")]
-            public float High { get; set; }
+            public decimal High { get; set; }
 
             [Column("3")]
-            public float Low { get; set; }
+            public decimal Low { get; set; }
 
             [Column("4")]
-            public float Volume { get; set; }
+            public decimal Volume { get; set; }
 
             [Column("5")]
-            public float Year { get; set; }
+            public decimal Year { get; set; }
             [Column("6")]
-            public float Month { get; set; }
+            public decimal Month { get; set; }
             [Column("7")]
-            public float Day { get; set; }
+            public decimal Day { get; set; }
         }
 
         public class StockTickPredication
         {
-            public float Score { get; set; }
+            public decimal Score { get; set; }
         }
     }
 }
